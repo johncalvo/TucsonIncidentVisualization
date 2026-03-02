@@ -7,3 +7,4 @@ public/data/
 *.geojson
 *.geojson.gz
 .DS_Store
+.wrangler/
