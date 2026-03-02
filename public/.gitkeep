@@ -1,0 +1,2 @@
+This folder contains public assets for the application.
+The GeoJSON data file should be placed in: public/data/Tucson_Police_Incidents_-_2025_-_Open_Data.geojson

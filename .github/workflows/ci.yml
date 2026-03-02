@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # Use a placeholder so the build succeeds even without real R2 URL
+          VITE_DATA_BASE_URL: '/data'
+
+      - name: Check bundle size
+        run: |
+          echo "=== Build output size ==="
+          du -sh dist/
+          du -sh dist/assets/
+          echo "=== Largest assets ==="
+          find dist/assets -type f -exec du -sh {} \; | sort -rh | head -20

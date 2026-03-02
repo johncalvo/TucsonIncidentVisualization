@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+data/
+public/data/
+*.geojson
+*.geojson.gz
+.DS_Store
