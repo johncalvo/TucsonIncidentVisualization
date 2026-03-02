@@ -1040,13 +1040,21 @@ function App() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
               <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#f9fafb' }}>Filters</span>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
-                title="Close sidebar"
-              >
-                ✕
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  onClick={clearAllFilters}
+                  style={{ background: 'none', border: 'none', color: '#06b6d4', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem' }}
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
+                  title="Close sidebar"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <Filters
               data={data}

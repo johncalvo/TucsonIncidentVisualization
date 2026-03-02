@@ -354,25 +354,6 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f9fafb' }}>Filters</h2>
-          {summaryStats && (
-            <p style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.25rem', lineHeight: 1.5 }}>
-              <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{formatNumber(summaryStats.filteredIncidents)}</span>
-              {' / '}{formatNumber(summaryStats.totalIncidents)} incidents
-            </p>
-          )}
-        </div>
-        <button
-          onClick={handleResetFilters}
-          style={{ fontSize: '0.75rem', fontWeight: 600, color: '#06b6d4', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', flexShrink: 0, marginLeft: '0.5rem' }}
-        >
-          Reset
-        </button>
-      </div>
-
       {/* Smart filters note */}
       <div style={{ marginBottom: '0.75rem', fontSize: '0.6875rem', color: '#06b6d4', background: 'rgba(6,182,212,0.06)', borderRadius: '0.375rem', padding: '0.375rem 0.625rem', border: '1px solid rgba(6,182,212,0.15)' }}>
         Options adjust based on current selection
