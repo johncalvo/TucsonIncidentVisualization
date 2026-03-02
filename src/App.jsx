@@ -1151,12 +1151,12 @@ function App() {
                   </div>
 
                   {[
-                    { key: 'CrimeCategory', title: 'Timeline — CrimeCategory' },
-                    { key: 'CrimeType', title: 'Timeline — CrimeType' },
-                    { key: 'UCRSummaryDesc', title: 'Timeline — UCRSummaryDesc' },
-                    { key: 'STATUTDESC', title: 'Timeline — STATUTDESC' },
-                    { key: 'WEAPON1DESC', title: 'Timeline — WEAPON1DESC' },
-                    { key: 'WEAPON2DESC', title: 'Timeline — WEAPON2DESC' },
+                    { key: 'CrimeCategory', title: 'Crime Category Over Time' },
+                    { key: 'CrimeType', title: 'Crime Type Over Time' },
+                    { key: 'UCRSummaryDesc', title: 'UCR Summary Over Time' },
+                    { key: 'STATUTDESC', title: 'Statute / Offense Over Time' },
+                    { key: 'WEAPON1DESC', title: 'Primary Weapon Over Time' },
+                    { key: 'WEAPON2DESC', title: 'Secondary Weapon Over Time' },
                   ].map((cfg) => {
                     const f = fieldTimelineSeries.byField?.[cfg.key]
                     return (

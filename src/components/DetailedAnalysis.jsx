@@ -245,13 +245,27 @@ function DetailedAnalysis({ data, filterMetadata }) {
         {
           label: 'Percent of Category',
           data: subcategoryShare.pct,
-          backgroundColor: 'rgba(59, 130, 246, 0.6)',
-          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(6, 182, 212, 0.5)',
+          borderColor: 'rgba(6, 182, 212, 0.9)',
           borderWidth: 1,
+          borderRadius: 2,
         },
       ],
     }
   }, [subcategoryShare.labels, subcategoryShare.pct])
+
+  const DARK_SCALE = {
+    grid: { color: 'rgba(255,255,255,0.06)' },
+    ticks: { color: '#9ca3af' },
+    title: { color: '#9ca3af' },
+  }
+  const DARK_TOOLTIP = {
+    backgroundColor: '#1f2937',
+    titleColor: '#f9fafb',
+    bodyColor: '#9ca3af',
+    borderColor: '#374151',
+    borderWidth: 1,
+  }
 
   const shareOptions = useMemo(() => ({
     responsive: true,
@@ -260,28 +274,27 @@ function DetailedAnalysis({ data, filterMetadata }) {
     plugins: {
       legend: { display: false },
       tooltip: {
+        ...DARK_TOOLTIP,
         callbacks: {
           label: (ctx) => {
             const idx = ctx.dataIndex
             const pct = ctx.parsed.x
             const raw = subcategoryShare.raw[idx]
-            return `${pct}% (${(raw || 0).toLocaleString()} incidents)`
+            return ` ${pct}% (${(raw || 0).toLocaleString()} incidents)`
           },
         },
       },
     },
     scales: {
       x: {
+        ...DARK_SCALE,
         beginAtZero: true,
-        ticks: {
-          callback: (v) => `${v}%`,
-        },
         suggestedMax: 100,
+        ticks: { ...DARK_SCALE.ticks, callback: (v) => `${v}%` },
       },
       y: {
-        ticks: {
-          autoSkip: false,
-        },
+        ...DARK_SCALE,
+        ticks: { ...DARK_SCALE.ticks, autoSkip: false },
       },
     },
   }), [subcategoryShare.raw])
@@ -295,8 +308,8 @@ function DetailedAnalysis({ data, filterMetadata }) {
         {
           label: 'Incidents',
           data: counts,
-          borderColor: 'rgba(34, 197, 94, 1)',
-          backgroundColor: 'rgba(34, 197, 94, 0.18)',
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.12)',
           fill: true,
           tension: 0.25,
           pointRadius: 0,
@@ -312,16 +325,15 @@ function DetailedAnalysis({ data, filterMetadata }) {
     plugins: {
       legend: { display: false },
       tooltip: {
+        ...DARK_TOOLTIP,
         callbacks: {
-          label: (ctx) => `${formatNumber(ctx.parsed?.y ?? 0)} incidents`,
+          label: (ctx) => ` ${formatNumber(ctx.parsed?.y ?? 0)} incidents`,
         },
       },
     },
     scales: {
-      x: {
-        ticks: { maxTicksLimit: 12 },
-      },
-      y: { beginAtZero: true, ticks: { callback: (v) => formatNumber(v) } },
+      x: { ...DARK_SCALE, ticks: { ...DARK_SCALE.ticks, maxTicksLimit: 12 } },
+      y: { ...DARK_SCALE, beginAtZero: true, ticks: { ...DARK_SCALE.ticks, callback: (v) => formatNumber(v) } },
     },
   }), [])
 
@@ -334,9 +346,10 @@ function DetailedAnalysis({ data, filterMetadata }) {
         {
           label: 'Incidents',
           data: top.map(r => r.count),
-          backgroundColor: 'rgba(139, 92, 246, 0.55)',
-          borderColor: 'rgba(139, 92, 246, 1)',
+          backgroundColor: 'rgba(167, 139, 250, 0.55)',
+          borderColor: 'rgba(167, 139, 250, 0.9)',
           borderWidth: 1,
+          borderRadius: 2,
         },
       ],
     }
@@ -349,24 +362,44 @@ function DetailedAnalysis({ data, filterMetadata }) {
     plugins: {
       legend: { display: false },
       tooltip: {
+        ...DARK_TOOLTIP,
         callbacks: {
-          label: (ctx) => `${formatNumber(ctx.parsed?.x ?? 0)} incidents`,
+          label: (ctx) => ` ${formatNumber(ctx.parsed?.x ?? 0)} incidents`,
         },
       },
     },
     scales: {
-      x: { beginAtZero: true, ticks: { callback: (v) => formatNumber(v) } },
-      y: { ticks: { autoSkip: false } },
+      x: { ...DARK_SCALE, beginAtZero: true, ticks: { ...DARK_SCALE.ticks, callback: (v) => formatNumber(v) } },
+      y: { ...DARK_SCALE, ticks: { ...DARK_SCALE.ticks, autoSkip: false } },
     },
   }), [])
 
+  const selectStyle = {
+    width: '100%', padding: '0.4375rem 0.625rem',
+    background: '#0d1117', border: '1px solid #374151',
+    borderRadius: '0.375rem', color: '#f9fafb', fontSize: '0.8125rem',
+    outline: 'none',
+  }
+  const labelStyle = { display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.04em' }
+  const chartCardStyle = { background: '#0d1117', border: '1px solid #1f2937', borderRadius: '0.5rem', padding: '1rem' }
+  const chartHeaderStyle = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.75rem' }
+  const emptyStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4b5563', fontSize: '0.875rem' }
+
+  const statCards = [
+    { label: 'Incidents in Selection', value: aggregates.totalIncidents, color: '#06b6d4' },
+    { label: 'Unique Locations', value: aggregates.uniqueLocations, color: '#22c55e' },
+    { label: 'Neighborhoods', value: aggregates.uniqueNeighborhoods, color: '#a78bfa' },
+    { label: 'Crime Categories', value: aggregates.categoryCount, color: '#f97316' },
+  ]
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Detailed Analysis</h2>
-          <p className="text-xs text-gray-600 mt-1">
-            Use the global filters above to narrow the dataset, then drill into category → subcategory share, trend, and location.
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#f9fafb' }}>Detailed Analysis</h2>
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+            Drill into category → subcategory share, trend, and location breakdown.
           </p>
         </div>
         <button
@@ -376,65 +409,42 @@ function DetailedAnalysis({ data, filterMetadata }) {
             setSubcategoryField('CrimeType')
             setLocationDimension('zip')
           }}
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+          style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600, background: 'transparent', border: '1px solid #374151', borderRadius: '0.375rem', color: '#9ca3af', cursor: 'pointer' }}
         >
-          Reset Analysis
+          Reset
         </button>
       </div>
 
-      {/* Analysis controls */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Controls */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label style={labelStyle}>Category</label>
+          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={selectStyle}>
             {aggregates.categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.value} ({c.count.toLocaleString()})
-              </option>
+              <option key={c.value} value={c.value}>{c.value} ({c.count.toLocaleString()})</option>
             ))}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory Field</label>
-          <select
-            value={subcategoryField}
-            onChange={(e) => setSubcategoryField(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label style={labelStyle}>Subcategory Field</label>
+          <select value={subcategoryField} onChange={(e) => setSubcategoryField(e.target.value)} style={selectStyle}>
             {subcategoryFields.map((f) => (
               <option key={f.key} value={f.key}>{f.label}</option>
             ))}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
-          <select
-            value={selectedSubcategory}
-            onChange={(e) => setSelectedSubcategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label style={labelStyle}>Subcategory</label>
+          <select value={selectedSubcategory} onChange={(e) => setSelectedSubcategory(e.target.value)} style={selectStyle}>
             <option value="">All Subcategories</option>
             {aggregates.subcategories.slice(0, 100).map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.value} ({s.count.toLocaleString()})
-              </option>
+              <option key={s.value} value={s.value}>{s.value} ({s.count.toLocaleString()})</option>
             ))}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Location Dimension</label>
-          <select
-            value={locationDimension}
-            onChange={(e) => setLocationDimension(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label style={labelStyle}>Location Dimension</label>
+          <select value={locationDimension} onChange={(e) => setLocationDimension(e.target.value)} style={selectStyle}>
             <option value="zip">Zip Code</option>
             <option value="DIVISION">Division</option>
             <option value="NEIGHBORHD">Neighborhood</option>
@@ -442,84 +452,62 @@ function DetailedAnalysis({ data, filterMetadata }) {
         </div>
       </div>
 
-      {/* Summary Stats (reflects current global filters) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <p className="text-sm text-gray-600">Total Incidents</p>
-          <p className="text-2xl font-bold text-blue-600">{aggregates.totalIncidents.toLocaleString()}</p>
-        </div>
-        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-          <p className="text-sm text-gray-600">Unique Locations</p>
-          <p className="text-2xl font-bold text-green-600">
-            {aggregates.uniqueLocations.toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-          <p className="text-sm text-gray-600">Neighborhoods</p>
-          <p className="text-2xl font-bold text-purple-600">
-            {aggregates.uniqueNeighborhoods.toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-          <p className="text-sm text-gray-600">Crime Categories</p>
-          <p className="text-2xl font-bold text-orange-600">
-            {aggregates.categoryCount.toLocaleString()}
-          </p>
-        </div>
+      {/* Summary stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.625rem', marginBottom: '1.25rem' }}>
+        {statCards.map(({ label, value, color }) => (
+          <div key={label} style={{ background: '#0d1117', border: '1px solid #1f2937', borderRadius: '0.5rem', padding: '0.75rem' }}>
+            <p style={{ fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{label}</p>
+            <p style={{ fontSize: '1.25rem', fontWeight: 700, color }}>{value.toLocaleString()}</p>
+          </div>
+        ))}
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-800">Subcategory Share</h3>
-            <div className="text-xs text-gray-600">
-              {selectedCategory || '—'} • {aggregates.totalInSelectedCategory.toLocaleString()} incidents
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1rem' }}>
+        <div style={chartCardStyle}>
+          <div style={chartHeaderStyle}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f9fafb' }}>Subcategory Share</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+              {selectedCategory || '—'} · {aggregates.totalInSelectedCategory.toLocaleString()} incidents
+            </span>
           </div>
           <div style={{ height: '420px' }}>
             {shareChart.labels.length > 0 ? (
               <Bar data={shareChart} options={shareOptions} />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                No subcategory data available.
-              </div>
+              <div style={emptyStyle}>No subcategory data available.</div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-800">Trend Over Time</h3>
-            <div className="text-xs text-gray-600">
-              {selectedSubcategory ? `${selectedCategory} → ${selectedSubcategory}` : 'Select a subcategory to enable'}
-            </div>
+        <div style={chartCardStyle}>
+          <div style={chartHeaderStyle}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f9fafb' }}>Trend Over Time</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+              {selectedSubcategory ? `${selectedCategory} → ${selectedSubcategory}` : 'Select a subcategory'}
+            </span>
           </div>
           <div style={{ height: '420px' }}>
             {selectedSubcategory && trendChart.labels.length > 0 ? (
               <Line data={trendChart} options={trendOptions} />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                Pick a subcategory to see the monthly trend.
-              </div>
+              <div style={emptyStyle}>Pick a subcategory to see the monthly trend.</div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 lg:col-span-2">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-800">Location Breakdown</h3>
-            <div className="text-xs text-gray-600">
-              {selectedSubcategory ? `${locationDimension}: top locations for selection` : 'Select a subcategory to enable'}
-            </div>
+        <div style={{ ...chartCardStyle, gridColumn: '1 / -1' }}>
+          <div style={chartHeaderStyle}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f9fafb' }}>Location Breakdown</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+              {selectedSubcategory ? `Top ${locationDimension === 'zip' ? 'zip codes' : locationDimension === 'DIVISION' ? 'divisions' : 'neighborhoods'} for selection` : 'Select a subcategory'}
+            </span>
           </div>
           <div style={{ height: '520px' }}>
             {selectedSubcategory && locationsChart.labels.length > 0 ? (
               <Bar data={locationsChart} options={locationsOptions} />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                Pick a subcategory to see the top locations.
-              </div>
+              <div style={emptyStyle}>Pick a subcategory to see the top locations.</div>
             )}
           </div>
         </div>

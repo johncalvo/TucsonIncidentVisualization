@@ -5,73 +5,68 @@ import { formatNumber } from '../utils/format'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend)
 
+const DARK_SCALE = {
+  grid: { color: 'rgba(255,255,255,0.06)' },
+  ticks: { color: '#9ca3af' },
+  title: { color: '#9ca3af' },
+}
+
+const DARK_TOOLTIP = {
+  backgroundColor: '#1f2937',
+  titleColor: '#f9fafb',
+  bodyColor: '#9ca3af',
+  borderColor: '#374151',
+  borderWidth: 1,
+}
+
+function categoryColor(idx) {
+  const hue = (idx * 137.5) % 360
+  return `hsl(${hue}, 65%, 52%)`
+}
+
 function TimelineVolumeChart({ data }) {
   const [view, setView] = useState('stacked') // 'stacked' | 'volume'
-  const [avgWindow, setAvgWindow] = useState(6) // months for rolling average
+  const [avgWindow, setAvgWindow] = useState(6)
 
   const chartData = useMemo(() => {
-    if (!data || !data.features || data.features.length === 0) {
-      return { labels: [], barDatasets: [], lineDatasets: [] }
-    }
+    if (!data?.features?.length) return { labels: [], barDatasets: [], lineDatasets: [] }
 
-    // Group incidents by YEAR-MONTH and category
-    const incidentsByYearMonth = {}
-    const categoryByYearMonth = {}
-    
     const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     const monthMap = {}
-    monthOrder.forEach((month, idx) => {
-      monthMap[month] = (idx + 1).toString().padStart(2, '0')
-    })
+    monthOrder.forEach((m, i) => { monthMap[m] = String(i + 1).padStart(2, '0') })
 
-    for (const feature of data.features) {
-      const month = feature.properties.MONTH_OCCU_String
-      const year = feature.properties.YEAR_OCCU || 'Unknown'
-      if (!month || year === 'Unknown') continue
+    const incidentsByYM = {}
+    const categoryByYM = {}
 
-      const yearMonth = `${year}-${monthMap[month]}`
-
-      if (!incidentsByYearMonth[yearMonth]) {
-        incidentsByYearMonth[yearMonth] = 0
-        categoryByYearMonth[yearMonth] = {}
-      }
-      incidentsByYearMonth[yearMonth]++
-
-      const category = feature.properties.CrimeCategory || 'Unknown'
-      categoryByYearMonth[yearMonth][category] = (categoryByYearMonth[yearMonth][category] || 0) + 1
+    for (const f of data.features) {
+      const month = f.properties.MONTH_OCCU_String
+      const year = f.properties.YEAR_OCCU
+      if (!month || !year) continue
+      const ym = `${year}-${monthMap[month]}`
+      incidentsByYM[ym] = (incidentsByYM[ym] || 0) + 1
+      if (!categoryByYM[ym]) categoryByYM[ym] = {}
+      const cat = f.properties.CrimeCategory || 'Unknown'
+      categoryByYM[ym][cat] = (categoryByYM[ym][cat] || 0) + 1
     }
 
-    // Sort by year-month chronologically
-    const sortedYearMonths = Object.keys(incidentsByYearMonth).sort()
+    const sortedYMs = Object.keys(incidentsByYM).sort()
+    const allCats = [...new Set(Object.values(categoryByYM).flatMap(c => Object.keys(c)))].sort()
 
-    const allCategories = [...new Set(
-      Object.values(categoryByYearMonth).flatMap(cats => Object.keys(cats))
-    )].sort()
-
-    // Colors for categories
-    const getColorForCategory = (idx) => {
-      const hue = (idx * 137.5) % 360
-      return `hsl(${hue}, 70%, 50%)`
-    }
-
-    // Stacked bar datasets per category
-    const barDatasets = allCategories.map((category, idx) => {
-      const color = getColorForCategory(idx)
+    const barDatasets = allCats.map((cat, idx) => {
+      const color = categoryColor(idx)
       return {
-        label: category,
-        data: sortedYearMonths.map(yearMonth => categoryByYearMonth[yearMonth]?.[category] || 0),
+        label: cat,
+        data: sortedYMs.map(ym => categoryByYM[ym]?.[cat] || 0),
         backgroundColor: color,
         borderColor: color,
-        borderWidth: 1
+        borderWidth: 0,
+        borderRadius: 0,
       }
     })
 
-    // Totals per month for volume view
-    const totals = sortedYearMonths.map((ym) => incidentsByYearMonth[ym] || 0)
+    const totals = sortedYMs.map(ym => incidentsByYM[ym] || 0)
 
-    // Rolling average helper
-    const rollingAvg = (arr, window) => {
-      const w = Math.max(1, window | 0)
+    const rollingAvg = (arr, w) => {
       const out = new Array(arr.length)
       let sum = 0
       for (let i = 0; i < arr.length; i++) {
@@ -84,19 +79,19 @@ function TimelineVolumeChart({ data }) {
 
     const lineDatasets = [
       {
-        label: 'Incidents',
+        label: 'Monthly Total',
         data: totals,
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.25)',
+        borderColor: '#06b6d4',
+        backgroundColor: 'rgba(6,182,212,0.12)',
         fill: true,
         tension: 0.3,
         pointRadius: 0,
         borderWidth: 2,
       },
       {
-        label: `Rolling Avg (${avgWindow} Mo)`,
+        label: `${avgWindow}-Mo Avg`,
         data: rollingAvg(totals, avgWindow),
-        borderColor: '#1e40af',
+        borderColor: '#f97316',
         backgroundColor: 'transparent',
         fill: false,
         tension: 0.25,
@@ -105,63 +100,48 @@ function TimelineVolumeChart({ data }) {
       },
     ]
 
-    return {
-      labels: sortedYearMonths,
-      barDatasets,
-      lineDatasets,
-    }
+    return { labels: sortedYMs, barDatasets, lineDatasets }
   }, [data, avgWindow])
 
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: {
         position: 'right',
-        maxHeight: 500
+        maxHeight: 500,
+        labels: { color: '#9ca3af', boxWidth: 10, padding: 8, font: { size: 11 } },
       },
-      title: {
-        display: false,
-      },
+      title: { display: false },
       tooltip: {
+        ...DARK_TOOLTIP,
         mode: 'index',
         intersect: false,
         callbacks: {
-          label: (context) => {
-            const label = context.dataset?.label ? `${context.dataset.label}: ` : ''
-            const val = typeof context.parsed?.y === 'number' ? context.parsed.y : context.raw
-            return `${label}${formatNumber(val)}`
-          }
-        }
-      }
+          label: (ctx) => {
+            const lbl = ctx.dataset?.label ? `${ctx.dataset.label}: ` : ''
+            const val = typeof ctx.parsed?.y === 'number' ? ctx.parsed.y : ctx.raw
+            return ` ${lbl}${formatNumber(val)}`
+          },
+        },
+      },
     },
     scales: {
       x: {
+        ...DARK_SCALE,
         stacked: true,
-        title: {
-          display: true,
-          text: 'Year-Month (2021-2025)'
-        },
-        ticks: {
-          maxTicksLimit: 15
-        }
+        title: { ...DARK_SCALE.title, display: true, text: 'Year–Month' },
+        ticks: { ...DARK_SCALE.ticks, maxTicksLimit: 15 },
       },
       y: {
+        ...DARK_SCALE,
         stacked: true,
         beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Number of Incidents'
-        },
-        ticks: {
-          callback: (value) => formatNumber(value)
-        }
-      }
-    }
+        title: { ...DARK_SCALE.title, display: true, text: 'Incidents' },
+        ticks: { ...DARK_SCALE.ticks, callback: (v) => formatNumber(v) },
+      },
+    },
   }
 
   const lineOptions = {
@@ -169,67 +149,81 @@ function TimelineVolumeChart({ data }) {
     maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
-      legend: { position: 'top' },
+      legend: { position: 'top', labels: { color: '#9ca3af', boxWidth: 12 } },
       title: { display: false },
       tooltip: {
+        ...DARK_TOOLTIP,
         mode: 'index',
         intersect: false,
         callbacks: {
-          label: (context) => {
-            const label = context.dataset?.label ? `${context.dataset.label}: ` : ''
-            const val = typeof context.parsed?.y === 'number' ? context.parsed.y : context.raw
-            return `${label}${formatNumber(val)}`
+          label: (ctx) => {
+            const lbl = ctx.dataset?.label ? `${ctx.dataset.label}: ` : ''
+            const val = typeof ctx.parsed?.y === 'number' ? ctx.parsed.y : ctx.raw
+            return ` ${lbl}${formatNumber(val)}`
           },
         },
       },
     },
     scales: {
       x: {
-        title: { display: true, text: 'Year-Month (2021-2025)' },
-        ticks: { maxTicksLimit: 15 },
+        ...DARK_SCALE,
+        title: { ...DARK_SCALE.title, display: true, text: 'Year–Month' },
+        ticks: { ...DARK_SCALE.ticks, maxTicksLimit: 15 },
       },
       y: {
+        ...DARK_SCALE,
         beginAtZero: true,
-        title: { display: true, text: 'Incident Count' },
-        ticks: { callback: (value) => formatNumber(value) },
+        title: { ...DARK_SCALE.title, display: true, text: 'Incident Count' },
+        ticks: { ...DARK_SCALE.ticks, callback: (v) => formatNumber(v) },
       },
     },
   }
 
+  const btnBase = { padding: '0.3rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', border: '1px solid', transition: 'all 0.15s' }
+
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex gap-2">
+    <div>
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
+        {['stacked', 'volume'].map((mode) => (
           <button
-            onClick={() => setView('stacked')}
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${view === 'stacked' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+            key={mode}
+            onClick={() => setView(mode)}
+            style={{
+              ...btnBase,
+              borderColor: view === mode ? '#06b6d4' : '#374151',
+              background: view === mode ? 'rgba(6,182,212,0.15)' : 'transparent',
+              color: view === mode ? '#06b6d4' : '#6b7280',
+            }}
           >
-            Stacked Bars
+            {mode === 'stacked' ? 'Stacked Bars' : 'Volume + Avg'}
           </button>
-          <button
-            onClick={() => setView('volume')}
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${view === 'volume' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-          >
-            Volume + Avg
-          </button>
-        </div>
+        ))}
+
         {view === 'volume' && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">Avg Window:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginLeft: '0.5rem' }}>
+            <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>Avg window:</span>
             {[1, 3, 6].map((w) => (
               <button
                 key={w}
                 onClick={() => setAvgWindow(w)}
-                className={`px-2 py-1 rounded-md ${avgWindow === w ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-700'}`}
+                style={{
+                  ...btnBase,
+                  borderColor: avgWindow === w ? '#f97316' : '#374151',
+                  background: avgWindow === w ? 'rgba(249,115,22,0.12)' : 'transparent',
+                  color: avgWindow === w ? '#f97316' : '#6b7280',
+                  padding: '0.2rem 0.5rem',
+                }}
               >
-                {w} Mo
+                {w} mo
               </button>
             ))}
           </div>
         )}
       </div>
 
-      <div style={{ height: '600px', position: 'relative' }}>
+      {/* Chart */}
+      <div style={{ height: '520px', position: 'relative' }}>
         {chartData.labels.length > 0 ? (
           view === 'stacked' ? (
             <Bar data={{ labels: chartData.labels, datasets: chartData.barDatasets }} options={barOptions} />
@@ -237,25 +231,20 @@ function TimelineVolumeChart({ data }) {
             <Line data={{ labels: chartData.labels, datasets: chartData.lineDatasets }} options={lineOptions} />
           )
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <p>No data available for the selected filters</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280', fontSize: '0.875rem' }}>
+            No data available for the selected filters
           </div>
         )}
       </div>
 
-      <div className="bg-gray-50 p-3 border-t border-gray-200">
-        <p className="text-sm text-gray-600">
-          <strong>{formatNumber(data?.features?.length || 0)}</strong> total incidents • 
-          {view === 'stacked' ? (
-            <>
-              <strong> {formatNumber(chartData.barDatasets.length)}</strong> crime types • Stacked monthly counts by category
-            </>
-          ) : (
-            <>
-              Volume with <strong>{avgWindow} Mo</strong> rolling average
-            </>
-          )}
-        </p>
+      {/* Footer */}
+      <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #1f2937', fontSize: '0.8125rem', color: '#6b7280' }}>
+        <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{formatNumber(data?.features?.length || 0)}</span> incidents
+        {view === 'stacked' ? (
+          <> · <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{chartData.barDatasets.length}</span> crime categories · stacked monthly counts</>
+        ) : (
+          <> · volume with <span style={{ color: '#f97316', fontWeight: 600 }}>{avgWindow}-month</span> rolling average</>
+        )}
       </div>
     </div>
   )
