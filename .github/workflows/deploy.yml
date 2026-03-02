@@ -29,10 +29,15 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Restore wrangler credentials
+      - name: Get Cloudflare access token
+        id: cf_token
         run: |
-          mkdir -p ~/.wrangler/config
-          echo "${{ secrets.WRANGLER_AUTH_CONFIG }}" > ~/.wrangler/config/default.toml
+          RESPONSE=$(curl -s -X POST "https://dash.cloudflare.com/oauth2/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=refresh_token&refresh_token=${{ secrets.CLOUDFLARE_REFRESH_TOKEN }}&client_id=54d11594-84e4-41aa-b438-e81b8fa78ee7")
+          ACCESS_TOKEN=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
       - name: Deploy to Cloudflare Pages
         run: |
@@ -41,4 +46,5 @@ jobs:
             --branch main \
             --commit-hash "${{ github.sha }}"
         env:
+          CLOUDFLARE_API_TOKEN: ${{ steps.cf_token.outputs.token }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
