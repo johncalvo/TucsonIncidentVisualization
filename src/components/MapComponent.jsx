@@ -74,17 +74,18 @@ function MapComponent({ data }) {
       })
 
       heatmapLayerRef.current = L.heatLayer(heatData, {
-        radius: 22,
-        blur: 14,
-        maxZoom: 1,
-        minOpacity: 0.35,
-        // Brand-aligned gradient: cyan → orange → red
+        radius: 18,
+        blur: 20,
+        maxZoom: 17,
+        minOpacity: 0.3,
+        max: 1.0,
+        // Brand-aligned gradient: blue → cyan → orange → red
         gradient: {
-          0.0: '#06b6d4',
-          0.3: '#0891b2',
+          0.0: '#0c4a6e',
+          0.2: '#06b6d4',
           0.5: '#f97316',
-          0.75: '#ef4444',
-          1.0: '#b91c1c',
+          0.8: '#ef4444',
+          1.0: '#7f1d1d',
         },
       }).addTo(mapInstanceRef.current)
     } else {

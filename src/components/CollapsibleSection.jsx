@@ -4,20 +4,20 @@ function CollapsibleSection({ title, subtitle, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <section className="bg-white rounded-lg shadow border border-gray-200">
+    <section style={{ background: '#111827', borderRadius: '0.75rem', border: '1px solid #1f2937' }}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full px-4 py-3 flex items-center justify-between"
+        style={{ width: '100%', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
       >
-        <div className="text-left">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          {subtitle ? <p className="text-xs text-gray-600 mt-0.5">{subtitle}</p> : null}
+        <div>
+          <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#f9fafb' }}>{title}</h2>
+          {subtitle ? <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{subtitle}</p> : null}
         </div>
-        <span className="text-gray-400 text-lg leading-none">{open ? '▾' : '▸'}</span>
+        <span style={{ color: '#4b5563', fontSize: '1rem', lineHeight: 1, marginLeft: '0.75rem', flexShrink: 0 }}>{open ? '▾' : '▸'}</span>
       </button>
-      {open ? <div className="px-4 pb-4">{children}</div> : null}
+      {open ? <div style={{ padding: '0 1.25rem 1.25rem' }}>{children}</div> : null}
     </section>
   )
 }

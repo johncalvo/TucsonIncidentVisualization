@@ -55,7 +55,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
   const uniqueValues = useMemo(() => ({
     crimeCategories: baseFeatures.length ? [...new Set(baseFeatures.map(f => f.properties.CrimeCategory).filter(v => v))].sort() : [],
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-    zipCodes: baseFeatures.length ? [...new Set(baseFeatures.map(f => f.properties.zip).filter(v => v))].sort() : [],
+    zipCodes: baseFeatures.length ? [...new Set(baseFeatures.map(f => f.properties.zip).filter(v => v && /^\d{5}$/.test(String(v))))].sort() : [],
     divisions: baseFeatures.length ? [...new Set(baseFeatures.map(f => f.properties.DIVISION).filter(v => v))].sort() : [],
     years: baseFeatures.length ? [...new Set(baseFeatures.map(f => f.properties.YEAR_OCCU).filter(v => v))].sort() : []
   }), [baseFeatures])
@@ -318,93 +318,104 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
     downloadText(`tucson-incident-fields-${date}.csv`, lines.join('\n'), 'text/csv')
   }
 
+  const filterBtnStyle = {
+    width: '100%', textAlign: 'left', padding: '0.5rem 0.75rem',
+    background: 'rgba(255,255,255,0.03)', border: '1px solid #374151',
+    borderRadius: '0.5rem', cursor: 'pointer',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  }
+  const expandedPanelStyle = {
+    marginTop: '0.5rem', padding: '0.75rem',
+    background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid #1f2937',
+  }
+  const inputStyle = {
+    width: '100%', padding: '0.375rem 0.625rem', background: '#0a0f1e',
+    border: '1px solid #374151', borderRadius: '0.375rem', color: '#f9fafb',
+    fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.5rem',
+  }
+  const checkboxListStyle = {
+    maxHeight: '192px', overflowY: 'auto',
+    display: 'flex', flexDirection: 'column', gap: '0.125rem',
+  }
+  const checkLabelStyle = {
+    display: 'flex', alignItems: 'center', cursor: 'pointer',
+    padding: '0.125rem 0.25rem', borderRadius: '0.25rem',
+  }
+  const allBtnStyle = {
+    flex: 1, padding: '0.25rem',
+    background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.3)',
+    borderRadius: '0.25rem', color: '#06b6d4', fontSize: '0.75rem', cursor: 'pointer',
+  }
+  const noneBtnStyle = {
+    flex: 1, padding: '0.25rem',
+    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: '0.25rem', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer',
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
-      {/* Header row matching reference style */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Filter Database</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f9fafb' }}>Filters</h2>
           {summaryStats && (
-            <p className="text-xs text-gray-600 mt-1">
-              Incidents: <span className="font-medium">{formatNumber(summaryStats.filteredIncidents)}</span> of {formatNumber(summaryStats.totalIncidents)} •
-              {' '}Crime Categories: <span className="font-medium">{formatNumber(summaryStats.filteredCrimeCategories)}</span> of {formatNumber(summaryStats.totalCrimeCategories)} •
-              {' '}Zip Codes: <span className="font-medium">{formatNumber(summaryStats.filteredZips)}</span> of {formatNumber(summaryStats.totalZips)}
+            <p style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.25rem', lineHeight: 1.5 }}>
+              <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{formatNumber(summaryStats.filteredIncidents)}</span>
+              {' / '}{formatNumber(summaryStats.totalIncidents)} incidents
             </p>
           )}
         </div>
         <button
           onClick={handleResetFilters}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          style={{ fontSize: '0.75rem', fontWeight: 600, color: '#06b6d4', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', flexShrink: 0, marginLeft: '0.5rem' }}
         >
-          Reset All
+          Reset
         </button>
       </div>
 
-      {/* Smart filters banner */}
-      <div className="mb-4 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2 border border-blue-100">
-        Smart filters: Options adjust based on selected filters
+      {/* Smart filters note */}
+      <div style={{ marginBottom: '0.75rem', fontSize: '0.6875rem', color: '#06b6d4', background: 'rgba(6,182,212,0.06)', borderRadius: '0.375rem', padding: '0.375rem 0.625rem', border: '1px solid rgba(6,182,212,0.15)' }}>
+        Options adjust based on current selection
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {/* Year Filter */}
         <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'year' ? null : 'year')}
-            className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-          >
-            <span className="text-sm">Years</span>
-            <span className="text-xs text-gray-600">
-              {formatNumber(filters.years.filter(y => uniqueValues.years.includes(y)).length)} of {formatNumber(uniqueValues.years.length)} available
-            </span>
-            <span className="ml-2 text-gray-400">{expandedSection === 'year' ? '▾' : '▸'}</span>
+          <button onClick={() => setExpandedSection(expandedSection === 'year' ? null : 'year')} style={filterBtnStyle}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Years</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                {formatNumber(filters.years.filter(y => uniqueValues.years.includes(y)).length)}/{formatNumber(uniqueValues.years.length)}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'year' ? '▾' : '▸'}</span>
+            </div>
           </button>
           {expandedSection === 'year' && (
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerms.year}
-                onChange={(e) => setSearchTerms(prev => ({ ...prev, year: e.target.value }))}
-                className="w-full px-2 py-1 mb-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => handleSelectAll('year', uniqueValues.years || [])} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Select All</button>
-                <button onClick={() => handleClearAll('year')} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">Clear All</button>
-              </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Selected: {filters.years.filter(y => uniqueValues.years.includes(y)).length === uniqueValues.years.length ? 'All' : formatNumber(filters.years.filter(y => uniqueValues.years.includes(y)).length)} of {formatNumber(uniqueValues.years.length)} available
+            <div style={expandedPanelStyle}>
+              <input type="text" placeholder="Search..." value={searchTerms.year}
+                onChange={(e) => setSearchTerms(prev => ({ ...prev, year: e.target.value }))} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button onClick={() => handleSelectAll('year', uniqueValues.years || [])} style={allBtnStyle}>All</button>
+                <button onClick={() => handleClearAll('year')} style={noneBtnStyle}>None</button>
               </div>
               {uniqueValues.years.length < allUniqueValues.years.length && (
-                <div className="text-xs text-orange-600 mb-2">Data may be incomplete</div>
+                <div style={{ fontSize: '0.6875rem', color: '#f97316', marginBottom: '0.5rem' }}>Data may be incomplete</div>
               )}
               {(uniqueValues.years?.length > 120) ? (
-                <VirtualList
-                  items={uniqueValues.years.filter(y => y && String(y).toLowerCase().includes(debouncedSearchTerms.year.toLowerCase()))}
-                  height={192}
-                  itemHeight={28}
+                <VirtualList items={uniqueValues.years.filter(y => y && String(y).toLowerCase().includes(debouncedSearchTerms.year.toLowerCase()))}
+                  height={192} itemHeight={28}
                   renderItem={(year) => (
-                    <label key={year} className="flex items-center cursor-pointer px-1">
-                      <input
-                        type="checkbox"
-                        checked={filters.years.includes(year)}
-                        onChange={() => handleYearChange(year)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{year}</span>
+                    <label key={year} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.years.includes(year)} onChange={() => handleYearChange(year)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{year}</span>
                     </label>
-                  )}
-                />
+                  )} />
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div style={checkboxListStyle}>
                   {uniqueValues.years?.filter(y => y && String(y).toLowerCase().includes(debouncedSearchTerms.year.toLowerCase())).map(year => (
-                    <label key={year} className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.years.includes(year)}
-                        onChange={() => handleYearChange(year)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{year}</span>
+                    <label key={year} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.years.includes(year)} onChange={() => handleYearChange(year)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{year}</span>
                     </label>
                   ))}
                 </div>
@@ -415,63 +426,41 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
         {/* Crime Category Filter */}
         <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'crime' ? null : 'crime')}
-            className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-          >
-            <span className="text-sm">Categories</span>
-            <span className="text-xs text-gray-600">
-              {formatNumber(filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length)} of {formatNumber(uniqueValues.crimeCategories.length)} available
-            </span>
-            <span className="ml-2 text-gray-400">{expandedSection === 'crime' ? '▾' : '▸'}</span>
+          <button onClick={() => setExpandedSection(expandedSection === 'crime' ? null : 'crime')} style={filterBtnStyle}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Categories</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                {formatNumber(filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length)}/{formatNumber(uniqueValues.crimeCategories.length)}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'crime' ? '▾' : '▸'}</span>
+            </div>
           </button>
           {expandedSection === 'crime' && (
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerms.crime}
-                onChange={(e) => setSearchTerms(prev => ({ ...prev, crime: e.target.value }))}
-                className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => handleSelectAll('crime', uniqueValues.crimeCategories || [])} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Select All</button>
-                <button onClick={() => handleClearAll('crime')} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">Clear All</button>
-              </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Selected: {filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length === uniqueValues.crimeCategories.length ? 'All' : formatNumber(filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length)} of {formatNumber(uniqueValues.crimeCategories.length)} available
+            <div style={expandedPanelStyle}>
+              <input type="text" placeholder="Search..." value={searchTerms.crime}
+                onChange={(e) => setSearchTerms(prev => ({ ...prev, crime: e.target.value }))} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button onClick={() => handleSelectAll('crime', uniqueValues.crimeCategories || [])} style={allBtnStyle}>All</button>
+                <button onClick={() => handleClearAll('crime')} style={noneBtnStyle}>None</button>
               </div>
               {uniqueValues.crimeCategories.length < allUniqueValues.crimeCategories.length && (
-                <div className="text-xs text-orange-600 mb-2">Data may be incomplete</div>
+                <div style={{ fontSize: '0.6875rem', color: '#f97316', marginBottom: '0.5rem' }}>Data may be incomplete</div>
               )}
               {(uniqueValues.crimeCategories?.length > 150) ? (
-                <VirtualList
-                  items={uniqueValues.crimeCategories.filter(c => c && c.toLowerCase().includes(debouncedSearchTerms.crime.toLowerCase()))}
-                  height={192}
-                  itemHeight={28}
+                <VirtualList items={uniqueValues.crimeCategories.filter(c => c && c.toLowerCase().includes(debouncedSearchTerms.crime.toLowerCase()))}
+                  height={192} itemHeight={28}
                   renderItem={(category) => (
-                    <label key={category} className="flex items-center cursor-pointer px-1">
-                      <input
-                        type="checkbox"
-                        checked={filters.crimeCategory.includes(category)}
-                        onChange={() => handleCrimeCategoryChange(category)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
+                    <label key={category} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.crimeCategory.includes(category)} onChange={() => handleCrimeCategoryChange(category)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{category}</span>
                     </label>
-                  )}
-                />
+                  )} />
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div style={checkboxListStyle}>
                   {uniqueValues.crimeCategories?.filter(c => c && c.toLowerCase().includes(debouncedSearchTerms.crime.toLowerCase())).map(category => (
-                    <label key={category} className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.crimeCategory.includes(category)}
-                        onChange={() => handleCrimeCategoryChange(category)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
+                    <label key={category} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.crimeCategory.includes(category)} onChange={() => handleCrimeCategoryChange(category)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{category}</span>
                     </label>
                   ))}
                 </div>
@@ -482,45 +471,28 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
         {/* Month Filter */}
         <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'month' ? null : 'month')}
-            className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-          >
-            <span className="text-sm">Months</span>
-            <span className="text-xs text-gray-600">
-              {formatNumber(filters.months.filter(m => uniqueValues.months.includes(m)).length)} of {formatNumber(uniqueValues.months.length)} available
-            </span>
-            <span className="ml-2 text-gray-400">{expandedSection === 'month' ? '▾' : '▸'}</span>
+          <button onClick={() => setExpandedSection(expandedSection === 'month' ? null : 'month')} style={filterBtnStyle}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Months</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                {formatNumber(filters.months.filter(m => uniqueValues.months.includes(m)).length)}/{formatNumber(uniqueValues.months.length)}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'month' ? '▾' : '▸'}</span>
+            </div>
           </button>
           {expandedSection === 'month' && (
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerms.month}
-                onChange={(e) => setSearchTerms(prev => ({ ...prev, month: e.target.value }))}
-                className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => handleSelectAll('month', uniqueValues.months || [])} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Select All</button>
-                <button onClick={() => handleClearAll('month')} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">Clear All</button>
+            <div style={expandedPanelStyle}>
+              <input type="text" placeholder="Search..." value={searchTerms.month}
+                onChange={(e) => setSearchTerms(prev => ({ ...prev, month: e.target.value }))} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button onClick={() => handleSelectAll('month', uniqueValues.months || [])} style={allBtnStyle}>All</button>
+                <button onClick={() => handleClearAll('month')} style={noneBtnStyle}>None</button>
               </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Selected: {filters.months.filter(m => uniqueValues.months.includes(m)).length === uniqueValues.months.length ? 'All' : formatNumber(filters.months.filter(m => uniqueValues.months.includes(m)).length)} of {formatNumber(uniqueValues.months.length)} available
-              </div>
-              {uniqueValues.months.length < allUniqueValues.months.length && (
-                <div className="text-xs text-orange-600 mb-2">Data may be incomplete</div>
-              )}
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div style={checkboxListStyle}>
                 {uniqueValues.months?.filter(m => m && m.toLowerCase().includes(debouncedSearchTerms.month.toLowerCase())).map(month => (
-                  <label key={month} className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.months.includes(month)}
-                      onChange={() => handleMonthChange(month)}
-                      className="rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{month}</span>
+                  <label key={month} style={checkLabelStyle}>
+                    <input type="checkbox" checked={filters.months.includes(month)} onChange={() => handleMonthChange(month)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                    <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{month}</span>
                   </label>
                 ))}
               </div>
@@ -530,63 +502,41 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
         {/* Zip Code Filter */}
         <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'zip' ? null : 'zip')}
-            className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-          >
-            <span className="text-sm">Zip Codes</span>
-            <span className="text-xs text-gray-600">
-              {formatNumber(filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length)} of {formatNumber(uniqueValues.zipCodes.length)} available
-            </span>
-            <span className="ml-2 text-gray-400">{expandedSection === 'zip' ? '▾' : '▸'}</span>
+          <button onClick={() => setExpandedSection(expandedSection === 'zip' ? null : 'zip')} style={filterBtnStyle}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Zip Codes</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                {formatNumber(filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length)}/{formatNumber(uniqueValues.zipCodes.length)}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'zip' ? '▾' : '▸'}</span>
+            </div>
           </button>
           {expandedSection === 'zip' && (
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerms.zip}
-                onChange={(e) => setSearchTerms(prev => ({ ...prev, zip: e.target.value }))}
-                className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => handleSelectAll('zip', uniqueValues.zipCodes || [])} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Select All</button>
-                <button onClick={() => handleClearAll('zip')} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">Clear All</button>
-              </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Selected: {filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length === uniqueValues.zipCodes.length ? 'All' : formatNumber(filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length)} of {formatNumber(uniqueValues.zipCodes.length)} available
+            <div style={expandedPanelStyle}>
+              <input type="text" placeholder="Search..." value={searchTerms.zip}
+                onChange={(e) => setSearchTerms(prev => ({ ...prev, zip: e.target.value }))} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button onClick={() => handleSelectAll('zip', uniqueValues.zipCodes || [])} style={allBtnStyle}>All</button>
+                <button onClick={() => handleClearAll('zip')} style={noneBtnStyle}>None</button>
               </div>
               {uniqueValues.zipCodes.length < allUniqueValues.zipCodes.length && (
-                <div className="text-xs text-orange-600 mb-2">Data may be incomplete</div>
+                <div style={{ fontSize: '0.6875rem', color: '#f97316', marginBottom: '0.5rem' }}>Data may be incomplete</div>
               )}
               {(uniqueValues.zipCodes?.length > 200) ? (
-                <VirtualList
-                  items={uniqueValues.zipCodes.filter(z => z && String(z).toLowerCase().includes(debouncedSearchTerms.zip.toLowerCase()))}
-                  height={192}
-                  itemHeight={28}
+                <VirtualList items={uniqueValues.zipCodes.filter(z => z && String(z).toLowerCase().includes(debouncedSearchTerms.zip.toLowerCase()))}
+                  height={192} itemHeight={28}
                   renderItem={(zip) => (
-                    <label key={zip} className="flex items-center cursor-pointer px-1">
-                      <input
-                        type="checkbox"
-                        checked={filters.zipCodes.includes(zip)}
-                        onChange={() => handleZipCodeChange(zip)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{zip}</span>
+                    <label key={zip} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.zipCodes.includes(zip)} onChange={() => handleZipCodeChange(zip)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{zip}</span>
                     </label>
-                  )}
-                />
+                  )} />
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div style={checkboxListStyle}>
                   {uniqueValues.zipCodes?.filter(z => z && String(z).toLowerCase().includes(debouncedSearchTerms.zip.toLowerCase())).map(zip => (
-                    <label key={zip} className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.zipCodes.includes(zip)}
-                        onChange={() => handleZipCodeChange(zip)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{zip}</span>
+                    <label key={zip} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.zipCodes.includes(zip)} onChange={() => handleZipCodeChange(zip)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db' }}>{zip}</span>
                     </label>
                   ))}
                 </div>
@@ -597,63 +547,41 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
         {/* Division Filter */}
         <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'division' ? null : 'division')}
-            className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-          >
-            <span className="text-sm">Divisions</span>
-            <span className="text-xs text-gray-600">
-              {formatNumber(filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length)} of {formatNumber(uniqueValues.divisions.length)} available
-            </span>
-            <span className="ml-2 text-gray-400">{expandedSection === 'division' ? '▾' : '▸'}</span>
+          <button onClick={() => setExpandedSection(expandedSection === 'division' ? null : 'division')} style={filterBtnStyle}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Divisions</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                {formatNumber(filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length)}/{formatNumber(uniqueValues.divisions.length)}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'division' ? '▾' : '▸'}</span>
+            </div>
           </button>
           {expandedSection === 'division' && (
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerms.division}
-                onChange={(e) => setSearchTerms(prev => ({ ...prev, division: e.target.value }))}
-                className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => handleSelectAll('division', uniqueValues.divisions || [])} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Select All</button>
-                <button onClick={() => handleClearAll('division')} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">Clear All</button>
-              </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Selected: {filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length === uniqueValues.divisions.length ? 'All' : formatNumber(filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length)} of {formatNumber(uniqueValues.divisions.length)} available
+            <div style={expandedPanelStyle}>
+              <input type="text" placeholder="Search..." value={searchTerms.division}
+                onChange={(e) => setSearchTerms(prev => ({ ...prev, division: e.target.value }))} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button onClick={() => handleSelectAll('division', uniqueValues.divisions || [])} style={allBtnStyle}>All</button>
+                <button onClick={() => handleClearAll('division')} style={noneBtnStyle}>None</button>
               </div>
               {uniqueValues.divisions.length < allUniqueValues.divisions.length && (
-                <div className="text-xs text-orange-600 mb-2">Data may be incomplete</div>
+                <div style={{ fontSize: '0.6875rem', color: '#f97316', marginBottom: '0.5rem' }}>Data may be incomplete</div>
               )}
               {(uniqueValues.divisions?.length > 150) ? (
-                <VirtualList
-                  items={uniqueValues.divisions.filter(d => d && d.toLowerCase().includes(debouncedSearchTerms.division.toLowerCase()))}
-                  height={192}
-                  itemHeight={28}
+                <VirtualList items={uniqueValues.divisions.filter(d => d && d.toLowerCase().includes(debouncedSearchTerms.division.toLowerCase()))}
+                  height={192} itemHeight={28}
                   renderItem={(division) => (
-                    <label key={division} className="flex items-center cursor-pointer px-1">
-                      <input
-                        type="checkbox"
-                        checked={filters.divisions.includes(division)}
-                        onChange={() => handleDivisionChange(division)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 truncate">{division}</span>
+                    <label key={division} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.divisions.includes(division)} onChange={() => handleDivisionChange(division)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{division}</span>
                     </label>
-                  )}
-                />
+                  )} />
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div style={checkboxListStyle}>
                   {uniqueValues.divisions?.filter(d => d && d.toLowerCase().includes(debouncedSearchTerms.division.toLowerCase())).map(division => (
-                    <label key={division} className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.divisions.includes(division)}
-                        onChange={() => handleDivisionChange(division)}
-                        className="rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 truncate">{division}</span>
+                    <label key={division} style={checkLabelStyle}>
+                      <input type="checkbox" checked={filters.divisions.includes(division)} onChange={() => handleDivisionChange(division)} style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                      <span style={{ fontSize: '0.8125rem', color: '#d1d5db', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{division}</span>
                     </label>
                   ))}
                 </div>
@@ -664,179 +592,118 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
 
         {/* Address Filter */}
         <div>
-          <label className="block font-semibold text-gray-700 mb-2">Address Search</label>
+          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb', marginBottom: '0.375rem' }}>Address Search</label>
           <input
             type="text"
             placeholder="Search address..."
             value={filters.address}
             onChange={handleAddressChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ ...inputStyle, marginBottom: 0 }}
           />
         </div>
       </div>
 
-      {/* Advanced Filters - Show ALL properties from metadata */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-xs text-gray-600">
-            Export the discovered field list for analysis.
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={exportFieldsJson}
-              className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-              disabled={!filterMetadata}
-            >
-              Export JSON
+      {/* Advanced Filters */}
+      <div style={{ marginTop: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>Export field list:</span>
+          <div style={{ display: 'flex', gap: '0.375rem' }}>
+            <button type="button" onClick={exportFieldsJson} disabled={!filterMetadata}
+              style={{ fontSize: '0.6875rem', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid #374151', borderRadius: '0.25rem', color: '#9ca3af', cursor: 'pointer' }}>
+              JSON
             </button>
-            <button
-              type="button"
-              onClick={exportFieldsCsv}
-              className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-              disabled={!filterMetadata}
-            >
-              Export CSV
+            <button type="button" onClick={exportFieldsCsv} disabled={!filterMetadata}
+              style={{ fontSize: '0.6875rem', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid #374151', borderRadius: '0.25rem', color: '#9ca3af', cursor: 'pointer' }}>
+              CSV
             </button>
           </div>
         </div>
-        <button
-          onClick={() => setAdvancedOpen(!advancedOpen)}
-          className="w-full text-left font-medium text-gray-800 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 flex justify-between items-center"
-        >
-          Advanced Filters ({formatNumber(dynamicPropsArray.length)} properties)
-          <span className="ml-2 text-gray-400">{advancedOpen ? '▾' : '▸'}</span>
+        <button onClick={() => setAdvancedOpen(!advancedOpen)} style={filterBtnStyle}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>
+            Advanced Filters ({formatNumber(dynamicPropsArray.length)} properties)
+          </span>
+          <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{advancedOpen ? '▾' : '▸'}</span>
         </button>
         {advancedOpen && filterMetadata && (
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {dynamicPropsArray.map(key => {
               const meta = filterMetadata[key]
-              const selected = filters.dynamic?.[key] || []
               const search = debouncedAdvancedSearchTerms[key] || ''
-
               const values = (Array.isArray(meta.allValues) && meta.allValues.length > 0)
-                ? meta.allValues
-                : (meta.topValues || [])
-
-              const allValuesList = values
-                .map(tv => tv?.value)
-                .filter(v => typeof v === 'string' && v.length > 0)
-
+                ? meta.allValues : (meta.topValues || [])
+              const allValuesList = values.map(tv => tv?.value).filter(v => typeof v === 'string' && v.length > 0)
               const explicitSelected = filters.dynamic?.[key]
               const effectiveSelected = Array.isArray(explicitSelected) ? explicitSelected : allValuesList
-
               const filtered = values.filter(tv => tv && tv.value && tv.value.toLowerCase().includes(search.toLowerCase()))
               const isHighCardinality = !!meta.truncated
               const textVal = (filters.dynamicText && typeof filters.dynamicText === 'object') ? (filters.dynamicText[key] || '') : ''
               const isNoOp = (!explicitSelected || explicitSelected.length === 0) && !String(textVal || '').trim()
-              
+
               return (
-                <div
-                  key={key}
-                  ref={(el) => {
-                    if (el) advancedCardRefs.current[key] = el
+                <div key={key}
+                  ref={(el) => { if (el) advancedCardRefs.current[key] = el }}
+                  style={{
+                    border: `1px solid ${highlightKey === key ? '#06b6d4' : '#1f2937'}`,
+                    borderRadius: '0.5rem', padding: '0.75rem', background: '#0d1117',
+                    boxShadow: highlightKey === key ? '0 0 0 2px rgba(6,182,212,0.2)' : 'none',
                   }}
-                  className={
-                    `border rounded p-3 bg-white ` +
-                    (highlightKey === key ? 'ring-2 ring-blue-400 border-blue-300' : '')
-                  }
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800 text-sm truncate" title={key}>{key}</h3>
-                    <span className="text-xs text-gray-500">{isNoOp ? 'All' : `${formatNumber(effectiveSelected.length)} selected`}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <h3 style={{ fontWeight: 600, color: '#e5e7eb', fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={key}>{key}</h3>
+                    <span style={{ fontSize: '0.6875rem', color: '#6b7280', flexShrink: 0, marginLeft: '0.5rem' }}>{isNoOp ? 'All' : `${formatNumber(effectiveSelected.length)} sel`}</span>
                   </div>
 
                   {isHighCardinality && (
-                    <div className="mb-2">
-                      <label className="block text-[11px] text-gray-600 mb-1">Text filter (contains)</label>
-                      <input
-                        type="text"
-                        placeholder="Type to filter…"
-                        value={textVal}
+                    <div style={{ marginBottom: '0.375rem' }}>
+                      <input type="text" placeholder="Text filter (contains)…" value={textVal}
                         onChange={(e) => setDynamicText(key, e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                        style={{ ...inputStyle, fontSize: '0.75rem', marginBottom: '0.25rem' }} />
                     </div>
                   )}
 
-                  {/* Search */}
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
+                  <input type="text" placeholder="Search…" value={search}
                     onChange={(e) => setAdvancedSearchTerms(prev => ({ ...prev, [key]: e.target.value }))}
-                    className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                    style={{ ...inputStyle, fontSize: '0.75rem' }} />
 
-                  {/* Select All / Clear All */}
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      onClick={() => setFilters(prev => {
-                        const nextDynamic = { ...(prev.dynamic || {}) }
-                        // Implicit "All" (no filter)
-                        delete nextDynamic[key]
-                        return { ...prev, dynamic: nextDynamic }
-                      })}
-                      className="flex-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({
-                        ...prev,
-                        dynamic: (() => {
-                          const nextDynamic = { ...(prev.dynamic || {}) }
-                          delete nextDynamic[key]
-                          return nextDynamic
-                        })(),
-                        dynamicText: { ...(prev.dynamicText || {}), [key]: '' }
-                      }))}
-                      className="flex-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                    >
-                      Clear
-                    </button>
+                  <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.375rem' }}>
+                    <button onClick={() => setFilters(prev => {
+                      const nextDynamic = { ...(prev.dynamic || {}) }
+                      delete nextDynamic[key]
+                      return { ...prev, dynamic: nextDynamic }
+                    })} style={{ ...allBtnStyle, fontSize: '0.6875rem' }}>All</button>
+                    <button onClick={() => setFilters(prev => ({
+                      ...prev,
+                      dynamic: (() => { const d = { ...(prev.dynamic || {}) }; delete d[key]; return d })(),
+                      dynamicText: { ...(prev.dynamicText || {}), [key]: '' }
+                    }))} style={{ ...noneBtnStyle, fontSize: '0.6875rem' }}>Clear</button>
                   </div>
 
-                  {/* Top values checkboxes with virtualization when long */}
                   {filtered.length > 200 ? (
-                    <VirtualList
-                      items={filtered}
-                      height={160}
-                      itemHeight={28}
-                      renderItem={(tv) => (
-                        tv && tv.value ? (
-                          <label key={tv.value} className="flex items-center text-xs cursor-pointer hover:bg-gray-50 p-1 rounded">
-                            <input
-                              type="checkbox"
-                              checked={effectiveSelected.includes(tv.value)}
-                              onChange={() => toggleAdvancedValue(key, tv.value, allValuesList)}
-                              className="mr-2"
-                            />
-                            <span className="truncate flex-1">{tv.value}</span>
-                            <span className="ml-auto text-gray-400 flex-shrink-0">{formatNumber(tv.count)}</span>
-                          </label>
-                        ) : null
-                      )}
-                    />
-                  ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1">
-                      {filtered.map(tv => tv && tv.value ? (
-                        <label key={tv.value} className="flex items-center text-xs cursor-pointer hover:bg-gray-50 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={effectiveSelected.includes(tv.value)}
+                    <VirtualList items={filtered} height={160} itemHeight={28}
+                      renderItem={(tv) => tv && tv.value ? (
+                        <label key={tv.value} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.25rem' }}>
+                          <input type="checkbox" checked={effectiveSelected.includes(tv.value)}
                             onChange={() => toggleAdvancedValue(key, tv.value, allValuesList)}
-                            className="mr-2"
-                          />
-                          <span className="truncate flex-1">{tv.value}</span>
-                          <span className="ml-auto text-gray-400 flex-shrink-0">{formatNumber(tv.count)}</span>
+                            style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, color: '#d1d5db' }}>{tv.value}</span>
+                          <span style={{ marginLeft: 'auto', color: '#4b5563', flexShrink: 0 }}>{formatNumber(tv.count)}</span>
+                        </label>
+                      ) : null} />
+                  ) : (
+                    <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                      {filtered.map(tv => tv && tv.value ? (
+                        <label key={tv.value} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.25rem' }}>
+                          <input type="checkbox" checked={effectiveSelected.includes(tv.value)}
+                            onChange={() => toggleAdvancedValue(key, tv.value, allValuesList)}
+                            style={{ marginRight: '0.5rem', accentColor: '#06b6d4' }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, color: '#d1d5db' }}>{tv.value}</span>
+                          <span style={{ marginLeft: 'auto', color: '#4b5563', flexShrink: 0 }}>{formatNumber(tv.count)}</span>
                         </label>
                       ) : null)}
                     </div>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {meta.truncated ? 'Showing top ' : 'Showing '}
-                    {formatNumber(values.filter(tv => tv && tv.value).length)} of {formatNumber(meta.totalUnique)}
+                  <p style={{ fontSize: '0.6875rem', color: '#4b5563', marginTop: '0.375rem' }}>
+                    {meta.truncated ? 'Top ' : ''}{formatNumber(values.filter(tv => tv && tv.value).length)} of {formatNumber(meta.totalUnique)}
                   </p>
                 </div>
               )

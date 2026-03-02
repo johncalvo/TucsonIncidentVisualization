@@ -60,7 +60,7 @@ function LazyMount({ minHeight = 420, children }) {
       {mounted ? (
         children
       ) : (
-        <div className="bg-white rounded-lg shadow" style={{ minHeight }} />
+        <div style={{ minHeight, background: '#111827', borderRadius: '0.75rem', border: '1px solid #1f2937' }} />
       )}
     </div>
   )
@@ -87,6 +87,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('map') // 'map' | 'charts' | 'analysis' | 'courts'
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [drilldownFocus, setDrilldownFocus] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
   const urlOverridesRef = useRef(null)
 
@@ -351,6 +352,14 @@ function App() {
             const res = await fetch(`${dataBaseUrl}manifest.json`, { cache: 'force-cache', signal: abort.signal })
             if (!res.ok) return null
             const manifest = await res.json()
+            // Extract last-updated timestamp from manifest
+            const ts = manifest?.fetchedAt || manifest?.generatedAt || manifest?.updatedAt
+            if (ts) {
+              const d = new Date(ts)
+              if (!isNaN(d)) {
+                setLastUpdated(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
+              }
+            }
             const chunks = Array.isArray(manifest?.chunks) ? manifest.chunks : null
             return chunks && chunks.length > 0 ? chunks : null
           } catch (e) {
@@ -1018,6 +1027,7 @@ function App() {
         onTabChange={setActiveTab}
         totalIncidents={summaryStats.totalIncidents}
         filteredIncidents={summaryStats.filteredIncidents}
+        lastUpdated={lastUpdated}
         loading={loading}
       />
 
@@ -1077,7 +1087,6 @@ function App() {
               <MetricsDashboard
                 totalIncidents={summaryStats.totalIncidents}
                 filteredIncidents={summaryStats.filteredIncidents}
-                neighborhoods={new Set((filteredData?.features || []).map(f => f?.properties?.NEIGHBORHD).filter(v => v)).size}
                 crimeCategories={summaryStats.filteredCrimeCategories}
                 divisions={summaryStats.filteredDivisions}
                 onClearFilters={clearAllFilters}

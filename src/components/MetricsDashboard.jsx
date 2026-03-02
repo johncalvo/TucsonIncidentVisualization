@@ -76,49 +76,42 @@ function KpiCard({ title, value, subtitle, tone = 'cyan', actionLabel, onAction,
   )
 }
 
-function MetricsDashboard({ totalIncidents, filteredIncidents, neighborhoods, crimeCategories, divisions, onClearFilters }) {
+function MetricsDashboard({ totalIncidents, filteredIncidents, crimeCategories, divisions, onClearFilters }) {
   const hidden = Math.max(0, (totalIncidents || 0) - (filteredIncidents || 0))
 
-  const cards = useMemo(() => [
-    {
-      title: 'Filtered Incidents',
-      value: filteredIncidents || 0,
-      subtitle: `${formatNumber(totalIncidents || 0)} total in dataset`,
-      tone: 'cyan',
-    },
-    {
-      title: 'Hidden by Filters',
-      value: `+${formatNumber(hidden)}`,
-      subtitle: hidden > 0 ? 'Clear filters to reveal' : 'All incidents visible',
-      tone: hidden > 0 ? 'orange' : 'gray',
-      actionLabel: hidden > 0 ? 'Clear filters' : undefined,
-      onAction: hidden > 0 ? onClearFilters : undefined,
-    },
-    {
-      title: 'Neighborhoods',
-      value: neighborhoods || 0,
-      subtitle: 'in filtered results',
-      tone: 'green',
-    },
-    {
-      title: 'Crime Categories',
-      value: crimeCategories || 0,
-      subtitle: 'in filtered results',
-      tone: 'purple',
-    },
-    {
-      title: 'Divisions',
-      value: divisions || 0,
-      subtitle: 'in filtered results',
-      tone: 'red',
-    },
-    {
-      title: 'Total Loaded',
-      value: totalIncidents || 0,
-      subtitle: 'incidents in dataset',
-      tone: 'gray',
-    },
-  ], [totalIncidents, filteredIncidents, neighborhoods, crimeCategories, divisions, hidden, onClearFilters])
+  const cards = useMemo(() => {
+    const base = [
+      {
+        title: 'Filtered Incidents',
+        value: filteredIncidents || 0,
+        subtitle: `of ${formatNumber(totalIncidents || 0)} total`,
+        tone: 'cyan',
+      },
+      {
+        title: 'Crime Categories',
+        value: crimeCategories || 0,
+        subtitle: 'in filtered results',
+        tone: 'orange',
+      },
+      {
+        title: 'Divisions',
+        value: divisions || 0,
+        subtitle: 'in filtered results',
+        tone: 'purple',
+      },
+    ]
+    if (hidden > 0) {
+      base.push({
+        title: 'Hidden by Filters',
+        value: `+${formatNumber(hidden)}`,
+        subtitle: 'Click to clear filters',
+        tone: 'red',
+        actionLabel: 'Clear filters',
+        onAction: onClearFilters,
+      })
+    }
+    return base
+  }, [totalIncidents, filteredIncidents, crimeCategories, divisions, hidden, onClearFilters])
 
   return (
     <div

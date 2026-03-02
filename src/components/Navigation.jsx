@@ -33,6 +33,9 @@ function Navigation({ activeTab, onTabChange, totalIncidents, filteredIncidents,
         <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#f9fafb', letterSpacing: '-0.01em' }}>
           Tucson Incidents
         </span>
+        <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: '#4b5563', background: '#1f2937', borderRadius: '0.25rem', padding: '0.125rem 0.375rem', marginLeft: '0.125rem' }}>
+          2021–2025
+        </span>
       </div>
 
       {/* Tab bar */}
@@ -45,11 +48,13 @@ function Navigation({ activeTab, onTabChange, totalIncidents, filteredIncidents,
               padding: '0.35rem 0.875rem',
               borderRadius: '0.375rem',
               fontSize: '0.8125rem',
-              fontWeight: 500,
+              fontWeight: activeTab === tab.id ? 600 : 500,
               cursor: 'pointer',
               border: 'none',
+              borderBottom: activeTab === tab.id ? '2px solid #06b6d4' : '2px solid transparent',
+              borderRadius: activeTab === tab.id ? '0.375rem 0.375rem 0 0' : '0.375rem',
               transition: 'all 0.15s',
-              background: activeTab === tab.id ? 'rgba(6,182,212,0.15)' : 'transparent',
+              background: activeTab === tab.id ? 'rgba(6,182,212,0.12)' : 'transparent',
               color: activeTab === tab.id ? '#06b6d4' : '#6b7280',
             }}
             onMouseEnter={(e) => {
