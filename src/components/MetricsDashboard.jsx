@@ -90,13 +90,13 @@ function MetricsDashboard({ totalIncidents, filteredIncidents, crimeCategories, 
       {
         title: 'Crime Categories',
         value: crimeCategories || 0,
-        subtitle: 'in filtered results',
+        subtitle: filteredIncidents === totalIncidents ? 'across all data' : 'in filtered results',
         tone: 'orange',
       },
       {
         title: 'Divisions',
         value: divisions || 0,
-        subtitle: 'in filtered results',
+        subtitle: filteredIncidents === totalIncidents ? 'across all data' : 'in filtered results',
         tone: 'purple',
       },
     ]

@@ -8,7 +8,7 @@ const NAV_TABS = [
   { id: 'courts', label: 'Courts' },
 ]
 
-function Navigation({ activeTab, onTabChange, totalIncidents, filteredIncidents, lastUpdated, loading }) {
+function Navigation({ activeTab, onTabChange, totalIncidents, filteredIncidents, lastUpdated, loading, loadingMore, loadingMoreProgress }) {
   const pct = totalIncidents > 0 ? Math.round((filteredIncidents / totalIncidents) * 100) : 100
 
   return (
@@ -92,6 +92,17 @@ function Navigation({ activeTab, onTabChange, totalIncidents, filteredIncidents,
           </>
         )}
       </div>
+      {/* Background loading progress bar */}
+      {loadingMore && (
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: '#1f2937' }}>
+          <div style={{
+            height: '100%',
+            width: `${loadingMoreProgress || 10}%`,
+            background: 'linear-gradient(90deg, #06b6d4, #8b5cf6)',
+            transition: 'width 0.4s ease',
+          }} />
+        </div>
+      )}
     </header>
   )
 }

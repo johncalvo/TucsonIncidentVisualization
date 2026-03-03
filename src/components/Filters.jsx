@@ -355,8 +355,8 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
       {/* Smart filters note */}
-      <div style={{ marginBottom: '0.75rem', fontSize: '0.6875rem', color: '#06b6d4', background: 'rgba(6,182,212,0.06)', borderRadius: '0.375rem', padding: '0.375rem 0.625rem', border: '1px solid rgba(6,182,212,0.15)' }}>
-        Options adjust based on current selection
+      <div style={{ marginBottom: '0.75rem', fontSize: '0.6875rem', color: '#4b5563' }}>
+        Options adjust based on selection
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -366,7 +366,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
             <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Years</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                {formatNumber(filters.years.filter(y => uniqueValues.years.includes(y)).length)}/{formatNumber(uniqueValues.years.length)}
+                {uniqueValues.years.length === 0 ? '–' : `${formatNumber(filters.years.filter(y => uniqueValues.years.includes(y)).length)}/${formatNumber(uniqueValues.years.length)}`}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'year' ? '▾' : '▸'}</span>
             </div>
@@ -411,7 +411,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
             <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Categories</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                {formatNumber(filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length)}/{formatNumber(uniqueValues.crimeCategories.length)}
+                {uniqueValues.crimeCategories.length === 0 ? '–' : `${formatNumber(filters.crimeCategory.filter(c => uniqueValues.crimeCategories.includes(c)).length)}/${formatNumber(uniqueValues.crimeCategories.length)}`}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'crime' ? '▾' : '▸'}</span>
             </div>
@@ -456,7 +456,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
             <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Months</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                {formatNumber(filters.months.filter(m => uniqueValues.months.includes(m)).length)}/{formatNumber(uniqueValues.months.length)}
+                {uniqueValues.months.length === 0 ? '–' : `${formatNumber(filters.months.filter(m => uniqueValues.months.includes(m)).length)}/${formatNumber(uniqueValues.months.length)}`}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'month' ? '▾' : '▸'}</span>
             </div>
@@ -487,7 +487,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
             <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Zip Codes</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                {formatNumber(filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length)}/{formatNumber(uniqueValues.zipCodes.length)}
+                {uniqueValues.zipCodes.length === 0 ? '–' : `${formatNumber(filters.zipCodes.filter(z => uniqueValues.zipCodes.includes(z)).length)}/${formatNumber(uniqueValues.zipCodes.length)}`}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'zip' ? '▾' : '▸'}</span>
             </div>
@@ -532,7 +532,7 @@ function Filters({ data, visibleData, filters, setFilters, filterMetadata, summa
             <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#e5e7eb' }}>Divisions</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                {formatNumber(filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length)}/{formatNumber(uniqueValues.divisions.length)}
+                {uniqueValues.divisions.length === 0 ? '–' : `${formatNumber(filters.divisions.filter(d => uniqueValues.divisions.includes(d)).length)}/${formatNumber(uniqueValues.divisions.length)}`}
               </span>
               <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{expandedSection === 'division' ? '▾' : '▸'}</span>
             </div>

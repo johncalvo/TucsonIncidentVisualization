@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
 import Filters from './components/Filters'
 import MetricsDashboard from './components/MetricsDashboard'
 import Navigation from './components/Navigation'
@@ -88,6 +88,9 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [drilldownFocus, setDrilldownFocus] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadingMoreProgress, setLoadingMoreProgress] = useState(0)
+  const filtersInitializedRef = useRef(false)
 
   const urlOverridesRef = useRef(null)
 
@@ -396,10 +399,8 @@ function App() {
         }
 
         const totalChunks = chunkFiles.length
-        const maxConcurrentFetches = 6
 
         const queue = chunkFiles.map((file) => {
-          // Back-compat: if manifest lists .geojson but .gz exists, prefer .gz.
           const prefersGz = !file.endsWith('.gz')
           const url = `${dataBaseUrl}${file}`
           const urlGz = prefersGz ? `${url}.gz` : url
@@ -411,9 +412,15 @@ function App() {
           }
         })
 
+        // Sort: most recent year first for faster initial display (2025 chunks load first)
+        queue.sort((a, b) => (b.year || 0) - (a.year || 0))
+
         let cursor = 0
+        let progressiveReleased = false
+        // Release the UI after loading this many chunks (covers the most recent year typically)
+        const PROGRESSIVE_THRESHOLD = Math.max(1, Math.ceil(totalChunks * 0.12))
+
         const runOne = async (task) => {
-          // Try gzip first (if applicable), fall back to plain.
           let response = await fetch(task.urlGz, { signal: abort.signal })
           let usedGz = task.urlGz.endsWith('.gz') && response.ok
           if (!response.ok) {
@@ -435,9 +442,19 @@ function App() {
           totalChunksLoaded++
           const progress = 10 + Math.min(80, (totalChunksLoaded / Math.max(1, totalChunks)) * 80)
           setLoadingProgress(Math.round(progress))
+          if (!cancelled) setLoadingMoreProgress(Math.round(progress))
+
+          // Progressive release: show the app after the first PROGRESSIVE_THRESHOLD chunks
+          if (!progressiveReleased && totalChunksLoaded >= PROGRESSIVE_THRESHOLD && allProcessedData.length > 0) {
+            progressiveReleased = true
+            const partialData = { type: 'FeatureCollection', features: [...allProcessedData] }
+            setData(partialData)
+            setLoading(false)
+            setLoadingMore(true)
+          }
         }
 
-        const workers = new Array(Math.min(maxConcurrentFetches, totalChunks)).fill(null).map(async () => {
+        const workers = new Array(Math.min(8, totalChunks)).fill(null).map(async () => {
           while (true) {
             const idx = cursor++
             if (idx >= queue.length) return
@@ -500,30 +517,27 @@ function App() {
               totalChunksLoaded++
               const progress = 10 + Math.min(80, (totalChunksLoaded / years.length) * 80)
               setLoadingProgress(Math.round(progress))
-              console.log(`Loaded Open_Data for ${year}`)
             } catch (err) {
               console.error(`Error loading Open_Data for ${year}:`, err.message)
             }
           }
         }
 
-        console.log(`Successfully loaded ${totalChunksLoaded} chunks. Total features: ${allProcessedData.length}`)
-        
         if (allProcessedData.length === 0) {
           throw new Error('No features loaded from any year')
         }
-        
+
         setLoadingProgress(100)
-        
-        // Create final combined data
+
         const finalData = {
           type: 'FeatureCollection',
           features: allProcessedData
         }
-        
+
         if (!cancelled) {
           setData(finalData)
           setLoading(false)
+          setLoadingMore(false)
         }
         
       } catch (error) {
@@ -543,79 +557,70 @@ function App() {
     }
   }, [])
 
-  // Initialize filters with all values once data loads
+  // Initialize filters with all values once data loads.
+  // Uses filtersInitializedRef to prevent re-init on progressive data updates.
   useEffect(() => {
-    if (data && data.features && data.features.length > 0) {
-      const allCrimeCategories = [...new Set(data.features.map(f => f.properties.CrimeCategory))].sort()
-      const allMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-      const allZipCodes = [...new Set(data.features.map(f => f.properties.zip))].sort()
-      const allDivisions = [...new Set(data.features.map(f => f.properties.DIVISION))].sort()
-      const allYears = [...new Set(data.features.map(f => f.properties.YEAR_OCCU))].sort()
-      
-      // Build filter metadata in a worker to avoid blocking UI
-      const worker = new Worker(new URL('./workers/filterBuilder.worker.js', import.meta.url))
-      
-      worker.onmessage = (e) => {
-        if (e.data.type === 'success') {
-          const meta = e.data.data
-          setFilterMetadata(meta)
-          
-          // Initialize filters: keep dynamic empty (user selects from Advanced Filters as needed)
-          // This avoids loading thousands of values at startup which causes sluggishness
-          const base = {
-            crimeCategory: allCrimeCategories,
-            months: allMonths,
-            zipCodes: allZipCodes,
-            address: '',
-            divisions: allDivisions,
-            years: allYears,
-            dynamic: {},
-            dynamicText: {}
-          }
+    if (!data?.features?.length) return
 
-          const merged = applyUrlOverrides(base, urlOverridesRef.current)
-          setFilters(merged)
-          setAppliedFilters(merged)
-          worker.terminate()
-        } else {
-          console.error('Filter metadata error:', e.data.error)
-          const base = {
-            crimeCategory: allCrimeCategories,
-            months: allMonths,
-            zipCodes: allZipCodes,
-            address: '',
-            divisions: allDivisions,
-            years: allYears,
-            dynamic: {},
-            dynamicText: {}
-          }
-          const merged = applyUrlOverrides(base, urlOverridesRef.current)
-          setFilters(merged)
-          setAppliedFilters(merged)
-          worker.terminate()
-        }
+    const allCrimeCategories = [...new Set(data.features.map(f => f.properties.CrimeCategory).filter(v => v))].sort()
+    const allMonths = MONTH_ORDER
+    const allZipCodes = [...new Set(data.features.map(f => f.properties.zip).filter(v => v))].sort()
+    const allDivisions = [...new Set(data.features.map(f => f.properties.DIVISION).filter(v => v))].sort()
+    const allYears = [...new Set(data.features.map(f => f.properties.YEAR_OCCU).filter(v => v != null))].sort()
+
+    if (!filtersInitializedRef.current) {
+      // First data load: initialize filters to all-selected, apply URL overrides
+      filtersInitializedRef.current = true
+
+      const base = {
+        crimeCategory: allCrimeCategories,
+        months: allMonths,
+        zipCodes: allZipCodes,
+        address: '',
+        divisions: allDivisions,
+        years: allYears,
+        dynamic: {},
+        dynamicText: {}
       }
-      
-      worker.onerror = (err) => {
-        console.error('Filter worker error:', err)
-        const base = {
-          crimeCategory: allCrimeCategories,
-          months: allMonths,
-          zipCodes: allZipCodes,
-          address: '',
-          divisions: allDivisions,
-          years: allYears,
-          dynamic: {},
-          dynamicText: {}
-        }
-        const merged = applyUrlOverrides(base, urlOverridesRef.current)
-        setFilters(merged)
-        setAppliedFilters(merged)
+      const merged = applyUrlOverrides(base, urlOverridesRef.current)
+      setFilters(merged)
+      setAppliedFilters(merged)
+
+      // Build filter metadata in worker
+      const worker = new Worker(new URL('./workers/filterBuilder.worker.js', import.meta.url))
+      worker.onmessage = (e) => {
+        if (e.data.type === 'success') setFilterMetadata(e.data.data)
         worker.terminate()
       }
-      
-      // Send data to worker
+      worker.onerror = () => worker.terminate()
       worker.postMessage(data)
+    } else {
+      // Subsequent data update (background historical load): expand filter options
+      // to include new values without overriding user's current selections.
+      const expand = (prev, field, newAll) => {
+        const added = newAll.filter(v => !prev[field].includes(v))
+        if (!added.length) return prev[field]
+        return [...prev[field], ...added].sort()
+      }
+      setFilters(prev => {
+        const years = expand(prev, 'years', allYears)
+        const crimeCategory = expand(prev, 'crimeCategory', allCrimeCategories)
+        const zipCodes = expand(prev, 'zipCodes', allZipCodes)
+        const divisions = expand(prev, 'divisions', allDivisions)
+        const unchanged = years === prev.years && crimeCategory === prev.crimeCategory && zipCodes === prev.zipCodes && divisions === prev.divisions
+        if (unchanged) return prev
+        return { ...prev, years, crimeCategory, zipCodes, divisions }
+      })
+      setAppliedFilters(prev => {
+        if (!prev) return prev
+        const years = expand(prev, 'years', allYears)
+        const crimeCategory = expand(prev, 'crimeCategory', allCrimeCategories)
+        const zipCodes = expand(prev, 'zipCodes', allZipCodes)
+        const divisions = expand(prev, 'divisions', allDivisions)
+        const unchanged = years === prev.years && crimeCategory === prev.crimeCategory && zipCodes === prev.zipCodes && divisions === prev.divisions
+        if (unchanged) return prev
+        return { ...prev, years, crimeCategory, zipCodes, divisions }
+      })
     }
   }, [data])
 
@@ -1029,6 +1034,8 @@ function App() {
         filteredIncidents={summaryStats.filteredIncidents}
         lastUpdated={lastUpdated}
         loading={loading}
+        loadingMore={loadingMore}
+        loadingMoreProgress={loadingMoreProgress}
       />
 
       <div className="app-main">
@@ -1132,7 +1139,7 @@ function App() {
                 </LazyMount>
               </CollapsibleSection>
 
-              <CollapsibleSection title="Timeline Charts (Selected Fields)" defaultOpen={false}>
+              <CollapsibleSection title="Timeline Charts (Selected Fields)" defaultOpen={true}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>Top values</span>
@@ -1160,7 +1167,7 @@ function App() {
                   ].map((cfg) => {
                     const f = fieldTimelineSeries.byField?.[cfg.key]
                     return (
-                      <CollapsibleSection key={cfg.key} title={cfg.title} defaultOpen={false}>
+                      <CollapsibleSection key={cfg.key} title={cfg.title} defaultOpen={cfg.key === 'CrimeCategory'}>
                         <LazyMount minHeight={560}>
                           <Suspense fallback={<DarkFallback minHeight={560} />}>
                             <FieldTimelineChart
