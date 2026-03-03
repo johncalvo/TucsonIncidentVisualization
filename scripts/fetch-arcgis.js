@@ -22,19 +22,20 @@ const __dirname = dirname(__filename)
 const ROOT = join(__dirname, '..')
 const DATA_DIR = join(ROOT, 'data')
 
-// ArcGIS Feature Service endpoints (one per year dataset)
+// ArcGIS MapServer endpoints (verified working 2025-03)
+// Base: https://gis.tucsonaz.gov/arcgis/rest/services/PublicMaps/OpenData_PublicSafety/MapServer
+const BASE = 'https://gis.tucsonaz.gov/arcgis/rest/services/PublicMaps/OpenData_PublicSafety/MapServer'
 const ENDPOINTS = {
-  2025: process.env.ARCGIS_ENDPOINT ||
-    'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_2025/FeatureServer/0/query',
-  2024: 'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_2024/FeatureServer/0/query',
-  2023: 'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_2023/FeatureServer/0/query',
-  2022: 'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_2022/FeatureServer/0/query',
-  2021: 'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_2021/FeatureServer/0/query',
+  2025: process.env.ARCGIS_ENDPOINT || `${BASE}/81/query`,
+  2024: `${BASE}/80/query`,
+  2023: `${BASE}/78/query`,
+  2022: `${BASE}/71/query`,
+  2021: `${BASE}/69/query`,
 }
 
 // Last-45-days endpoint for near-real-time updates
 const LAST_45_ENDPOINT =
-  'https://gisdata.tucsonaz.gov/maps/cotgis/arcgis/rest/services/TPD/Tucson_Police_Incidents_Last_45_Days/FeatureServer/0/query'
+  'https://gis.tucsonaz.gov/public/rest/services/PublicMaps/PublicSafety/MapServer/49/query'
 
 const PAGE_SIZE = 2000 // ArcGIS default max per request
 

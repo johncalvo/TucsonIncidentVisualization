@@ -23,42 +23,42 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch full 2025 year from ArcGIS
-        env:
-          ARCGIS_ENDPOINT: ${{ secrets.ARCGIS_ENDPOINT }}
+      - name: Fetch full current year from ArcGIS
         run: |
-          node scripts/fetch-arcgis.js --year 2025
+          YEAR=$(date +%Y)
           TODAY=$(date +%Y-%m-%d)
+          node scripts/fetch-arcgis.js --year ${YEAR}
           # Rename to the format expected by build_site_data.js
-          mv data/fetched_${TODAY}.geojson data/Tucson_Police_Incidents_-_2025_-_Open_Data.geojson
-          echo "Features fetched:"
-          python3 -c "import json; d=json.load(open('data/Tucson_Police_Incidents_-_2025_-_Open_Data.geojson')); print(len(d['features']))"
+          mv data/fetched_${TODAY}.geojson data/Tucson_Police_Incidents_-_${YEAR}_-_Open_Data.geojson
+          echo "Features fetched for ${YEAR}:"
+          python3 -c "import json; d=json.load(open('data/Tucson_Police_Incidents_-_${YEAR}_-_Open_Data.geojson')); print(len(d['features']))"
 
-      - name: Rebuild 2025 data chunks
+      - name: Rebuild current year data chunks
         run: node scripts/build_site_data.js --targetMB 5 --level 9
 
-      - name: Merge manifest with existing historical chunks (2021-2024)
+      - name: Merge manifest with existing historical chunks
         env:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         run: |
-          # Download existing manifest from R2 to preserve 2021-2024 chunk entries
+          # Download existing manifest from R2 to preserve historical chunk entries
           curl -sf "${R2_PUBLIC_URL}/manifest.json" -o /tmp/existing-manifest.json \
             || echo '{"chunks":[]}' > /tmp/existing-manifest.json
 
           node -e "
             const fs = require('fs');
+            const year = String(new Date().getFullYear());
             const existing = JSON.parse(fs.readFileSync('/tmp/existing-manifest.json', 'utf-8'));
             const rebuilt = JSON.parse(fs.readFileSync('public/data/manifest.json', 'utf-8'));
-            // Keep historical (non-2025) chunks from R2, add fresh 2025 chunks
-            const historical = (existing.chunks || []).filter(c => !String(c).includes('2025'));
-            const fresh2025 = (rebuilt.chunks || []);
+            // Keep historical (prior year) chunks from R2, add freshly-built current-year chunks
+            const historical = (existing.chunks || []).filter(c => !String(c).includes(year));
+            const freshCurrent = (rebuilt.chunks || []);
             const merged = {
               ...rebuilt,
-              chunks: [...historical, ...fresh2025],
+              chunks: [...historical, ...freshCurrent],
               generatedAt: new Date().toISOString(),
             };
             fs.writeFileSync('public/data/manifest.json', JSON.stringify(merged));
-            console.log('Manifest: ' + merged.chunks.length + ' total chunks (' + historical.length + ' historical + ' + fresh2025.length + ' 2025)');
+            console.log('Manifest: ' + merged.chunks.length + ' total chunks (' + historical.length + ' historical + ' + freshCurrent.length + ' ' + year + ')');
           "
 
       - name: Upload updated chunks to Cloudflare R2
